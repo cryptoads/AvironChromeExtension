@@ -1,6 +1,6 @@
 
 let exportCSV = document.getElementById("toCSV");
-
+let stravaSync = document.getElementById("stravaSync")
 
 
 exportCSV.addEventListener("click", async () => {
@@ -11,6 +11,17 @@ exportCSV.addEventListener("click", async () => {
       function: getBearer,
     });
   });
+
+  
+stravaSync.addEventListener("click", async () => {
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: syncStrava,
+  });
+});
+
   
   // The body of this function will be executed as a content script inside the
   // current page
@@ -35,7 +46,6 @@ exportCSV.addEventListener("click", async () => {
     else{
         console.log(bearerToken)
     }
-    console.log(bearerToken)
     let response = await fetch("https://social.prod.avironactive.net/v2/rpc/user_workouts_list?unwrap", {
     "headers": {
       "authorization": "Bearer "+ bearerToken.toString(),                         
@@ -57,22 +67,14 @@ exportCSV.addEventListener("click", async () => {
     let csvContent = "data:text/csv;charset=utf-8," + csv
     console.log(csv)
 
-
-
     var encodedUri = encodeURI(csvContent);
     var link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "my_data.csv");
     document.body.appendChild(link); // Required for FF
-
     link.click(); 
-    // var metrics = await data.workoutMetrics
-    // console.log(metrics)
-    // const header2 = Object.keys(metrics)
-    // console.log(header2)
-    // const csv2 = [header2.join(','),
-    //     ...metrics.map(row => header2.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
-    // ].join('\r\n')
+}
 
-    // console.log(csv2)
+async function syncStrava() {
+  window.open('https://www.strava.com/oauth/authorize?client_id=91623&response_type=code&redirect_uri=http://cmichels.com/exchange_token&approval_prompt=force&scope=read_all,activity:read', '_blank');
 }
