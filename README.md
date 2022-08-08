@@ -19,7 +19,7 @@ Navigate to the unziped folder and load the extension
 ![load file](images/load.png)
 
 You should now see the extension in the extensions dropdown
-![done file](images/load.png)
+![done file](images/done.png)
 
 ## Usage
 Navigate to your Aviron membership profile (https://accounts.avironactive.com/profile) and login.  You can then click the extension to export your workout data to CSV.  
