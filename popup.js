@@ -16,12 +16,13 @@ exportCSV.addEventListener("click", async () => {
 
 async function workoutCount(){
 //csv creation function
-  const makeCSV = async function(history) {
+  const makeCSV = async function(obj) {
+    console.log(obj)
     const replacer = (key, value) => value === null ? '' : value
-    const header = Object.keys(history[0])
+    const header = Object.keys(obj[0])
     console.log(header)
     const csv = [header.join(','),
-        ...history.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+        ...obj.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
     ].join('\r\n')
   
     let csvContent = "data:text/csv;charset=utf-8," + csv
@@ -87,12 +88,21 @@ async function workoutCount(){
       } 
     })
 
+
+  function formatMinutes(sec){
+    return new Date(sec*1000).toUTCString().split(" ")[4]
+  }
+  const average = function(array){
+    const sum = array.reduce((a, b) => a + b, 0);
+    const avg = (sum / array.length) || 0;
+    return avg
+  }
+  let itemsProcessed = 0;
     //fetch individual workout data
     const allWorkouts =  async function(item){
       let body = JSON.stringify({
         "matchid": item
       });
-      console.log(body)
       let res = await fetch("https://social.prod.avironactive.net/v2/rpc/user_workouts?unwrap", {
         "headers": {
           "authorization": "Bearer "+ bearerToken.toString(),                         
@@ -104,20 +114,52 @@ async function workoutCount(){
         let data1 = await res.json();
         const history1 = await data1
         console.log(history1)
-        // history1.forEach(element =>{
-        //   try {
-        //     workouts1.push(element.id)
-        //   } catch (error) {
-        //     console.log(error)
-        //   } 
-        // });
+        workouts1.push({
+          "id": history1.id,
+          "gameId": history1.gameId,
+          "gameLevel": history1.gameLevel,
+          "name":history1.name,
+          "type":history1.type,
+          "createTime":history1.createTime,
+          "timeInSeconds": history1.time,
+          "calories":history1.calories,
+          "avgCaloriesPerHour":history1.workoutMetrics.avgCalpHour,
+          "avgHeartRate": history1.workoutMetrics.heartRates ? average(history1.workoutMetrics.heartRates) : "",
+          "meters":history1.meter,
+          "strokes": history1.strokes,
+          "avgStrokesPerMinute": history1.workoutMetrics.avgSPM,
+          "output":history1.output,
+          "avgWatts":history1.workoutMetrics.avgWatt,
+          "totalWatts":history1.workoutMetrics.totalWatt,
+          "avgMin/500m": formatMinutes(history1.workoutMetrics.avgSecp500)
+
+        })
+        itemsProcessed += 1;
+        if(itemsProcessed==workouts.length){
+          
+        //turn the json response into a csv
+          try {
+            makeCSV(workouts1)
+          } catch (error) {
+            console.log(error)
+          }
+        }else{
+          console.log(itemsProcessed)
+        }
+
       }
-workouts.forEach(allWorkouts)
-//turn the json response into a csv
-    try {
-      makeCSV(history)
-    } catch (error) {
-      console.log(error)
+  const delayLoop = (fn, delay) => {
+    return (name, i) => {
+      setTimeout(() => {
+        allWorkouts(name);
+      }, i * 500);
     }
-    
+  };    
+
+
+workouts.forEach(delayLoop(allWorkouts, 500))
+
+
+
+
 }
